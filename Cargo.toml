@@ -1,0 +1,26 @@
+[package]
+name = "nala-colibri-rs"
+version = "2.2.0-nala.6.6.6"
+edition = "2024"
+license = "Apache-2.0"
+authors = ["Vincenzo Fornaro (Upstream Colibri)", "Master-MD / NALA Engineering (100% Native Rust-Turbo Rewrite)"]
+description = "100% Native Rust-Turbo Hierarchical 3-Tier (VRAM + Host RAM + Striped NVMe) MoE Inference Engine, 7-Profile NALA-HAL Planner, Jev-Compatible System One Calibrated Decision Engine, Safetensors/GGUF/qpack Inspector & Hardened OpenAI/Anthropic/MCP Gateway (Zero-Python, Zero-Node.js)"
+repository = "https://github.com/Master-MD/NALA-Colibri-RS"
+readme = "README.md"
+keywords = ["moe", "inference", "nvme-offload", "rust", "system-one"]
+categories = ["command-line-utilities", "science", "algorithms"]
+
+[[bin]]
+name = "nala-colibri-rs"
+path = "src/main.rs"
+
+[dependencies]
+# 100% Pure Rust Standard Library — Zero external crate supply-chain attack surface,
+# instant 5-target cross-compilation (macOS ARM64/x86_64, Linux x86_64/ARM64 musl, Windows x86_64).
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true

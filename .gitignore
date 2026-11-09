@@ -1,0 +1,9 @@
+/target/
+/dist/*.tar.gz
+/dist/*.zip
+/dist/nala-colibri-rs-*
+.DS_Store
+*.coli_usage
+*.coli_pairs
+/dist/install.sh
+/dist/install.ps1

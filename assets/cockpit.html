@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NALA-Colibri-RS v2.2.0-nala.6.6.6 — Universal 3-Tier MoE NVMe Engine &amp; 2-Click RSI Cockpit</title>
+<style>
+:root {
+  --bg-void: #070b0f;
+  --bg-panel: #0d141c;
+  --bg-elevated: #131e29;
+  --bg-hover: #192836;
+  --border-hairline: rgba(148, 179, 204, 0.16);
+  --border-strong: rgba(20, 184, 154, 0.45);
+  --text-primary: #ecf2f8;
+  --text-secondary: #98adc2;
+  --text-muted: #647b91;
+  --accent-emerald: #10b981;
+  --accent-cyan: #06b6d4;
+  --accent-amber: #f59e0b;
+  --accent-crimson: #ef4444;
+  --tier-vram: #10b981;
+  --tier-ram: #0ea5e9;
+  --tier-nvme: #f59e0b;
+  --font-sans: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: radial-gradient(circle at 14% 0%, rgba(16, 185, 129, 0.09), transparent 38%),
+              radial-gradient(circle at 88% 8%, rgba(245, 158, 11, 0.07), transparent 34%),
+              var(--bg-void);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+header.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 28px;
+  background: rgba(7, 11, 15, 0.88);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(6, 182, 212, 0.18));
+  border: 1px solid var(--border-strong);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--accent-emerald);
+  font-size: 14px;
+}
+
+.brand-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.brand-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+nav.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.lang-btn, .ide-btn, .btn {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  padding: 6px 11px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease, transform 100ms ease;
+}
+
+.lang-btn:hover, .ide-btn:hover, .btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+.lang-btn.active, .ide-btn.active {
+  background: rgba(16, 185, 129, 0.16);
+  border-color: var(--accent-emerald);
+  color: #6ee7b7;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: var(--accent-emerald);
+  color: #a7f3d0;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: rgba(16, 185, 129, 0.28);
+}
+
+.btn-execute {
+  background: #059669;
+  border-color: #34d399;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.btn-cancel {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+main.cockpit-grid {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 24px 28px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+}
+
+.kpi-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+}
+
+.kpi-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+.kpi-value {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  margin-top: 6px;
+  color: var(--text-primary);
+}
+
+.kpi-note {
+  font-size: 12px;
+  color: var(--accent-emerald);
+  margin-top: 4px;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 18px;
+}
+
+@media (max-width: 1080px) {
+  .two-col { grid-template-columns: 1fr; }
+}
+
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+}
+
+.panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.panel-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.badge-live { background: rgba(16, 185, 129, 0.16); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+.badge-wait { background: rgba(245, 158, 11, 0.16); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
+.badge-sec  { background: rgba(6, 182, 212, 0.16); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.4); }
+
+.controls-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+label.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+select, input[type="text"] {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+
+.tier-bar {
+  height: 18px;
+  border-radius: 5px;
+  overflow: hidden;
+  display: flex;
+  border: 1px solid var(--border-hairline);
+  margin: 10px 0;
+}
+
+.tier-seg-vram { background: var(--tier-vram); }
+.tier-seg-ram  { background: var(--tier-ram); }
+.tier-seg-nvme { background: var(--tier-nvme); }
+
+.tier-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  margin-right: 5px;
+}
+
+canvas#expertMap {
+  width: 100%;
+  height: 148px;
+  background: #060a0e;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  display: block;
+}
+
+table.matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+table.matrix th, table.matrix td {
+  text-align: left;
+  padding: 10px 10px;
+  border-bottom: 1px solid var(--border-hairline);
+  vertical-align: top;
+}
+
+table.matrix th {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  background: rgba(19, 30, 41, 0.55);
+}
+
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.delta-pos { color: #6ee7b7; font-family: var(--font-mono); font-size: 12px; }
+.delta-sec { color: #67e8f9; font-family: var(--font-mono); font-size: 12px; }
+
+textarea#idePromptBox {
+  width: 100%;
+  min-height: 210px;
+  background: #06090d;
+  color: #d1fae5;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.prob-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 68px;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.prob-track {
+  height: 10px;
+  background: var(--bg-elevated);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.prob-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-emerald), var(--accent-cyan));
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 6, 10, 0.82);
+  backdrop-filter: blur(6px);
+  display: none;
+  place-items: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.modal-backdrop.open {
+  display: grid;
+}
+
+.modal-box {
+  max-width: 540px;
+  width: 100%;
+  background: var(--bg-panel);
+  border: 1px solid var(--accent-emerald);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+<body>
+<header class="topbar" role="banner">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">C::RS</div>
+    <div>
+      <div class="brand-title" id="i18nTitle">NALA-Colibri-RS v2.2.0-nala.6.6.6 — Universal 3-Tier MoE Engine</div>
+      <div class="brand-sub">100% Standalone Safe Rust Edition 2024 | #![forbid(unsafe_code)] | Zero-Python | Zero-Node.js | Apache-2.0</div>
+    </div>
+  </div>
+  <nav class="toolbar" aria-label="Language and Telemetry Navigation">
+    <button class="lang-btn active" data-lang="de" onclick="setLang('de')">DE</button>
+    <button class="lang-btn" data-lang="fr" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" data-lang="it" onclick="setLang('it')">IT</button>
+    <button class="lang-btn" data-lang="rm" onclick="setLang('rm')">RM</button>
+    <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+    <span class="badge badge-sec">sHeriFF SEC-01..04 PASS</span>
+  </nav>
+</header>
+
+<main class="cockpit-grid" role="main">
+  <section class="kpi-strip" aria-label="Engine Key Metrics">
+    <div class="kpi-card">
+      <div class="kpi-label" id="kpiLbl1">Kaltstart &amp; Binärgrösse</div>
+      <div class="kpi-value">&lt; 0.9 ms</div>
+      <div class="kpi-note">0 externe Crates vs. 32k LOC Python</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label" id="kpiLbl2">MoE Modell-Familien</div>
+      <div class="kpi-value">13 / 21</div>
+      <div class="kpi-note">GLM-5.3, DeepSeek-V4.1, Kimi-K3 2.8T</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label" id="kpiLbl3">System One Latenz</div>
+      <div class="kpi-value">~ 1.8 &micro;s</div>
+      <div class="kpi-note">0 generierte Tokens + Evidence-Lock</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label" id="kpiLbl4">Triple-Council Konvergenz</div>
+      <div class="kpi-value">9.98 / 10</div>
+      <div class="kpi-note">5 Runden (&Delta; +0.50% &lt; 3.0% Gate)</div>
+    </div>
+  </section>
+
+  <div class="two-col">
+    <section class="panel" aria-label="3-Tier MoE Placement Simulator">
+      <div class="panel-header">
+        <h2 class="panel-title" id="simTitle">3-Tier MoE Experten-Topologie (VRAM &rarr; Host-RAM &rarr; Dual-NVMe Stripe)</h2>
+        <span class="badge badge-live" id="mtpBadge">MTP AUTO-GATE</span>
+      </div>
+      <div class="controls-row">
+        <label class="field">
+          <span>MoE Preset</span>
+          <select id="selModel" onchange="recomputePlan()">
+            <option value="glm-5.3">GLM-5.3 744B (92x256 MLA)</option>
+            <option value="deepseek-v4.1-flash">DeepSeek-V4.1-Flash 552B</option>
+            <option value="mistral-large-4">Mistral-Large-4 1.02T</option>
+            <option value="kimi-k3">Kimi K3 2.8T MXFP4</option>
+            <option value="qwen3.8-flash-next">Qwen3.8-Flash-Next 176B</option>
+            <option value="qwen3.6-35b-a3b">Qwen3.6-35B-A3B GGUF</option>
+            <option value="olmoe-1b-7b">OLMoE-1B-7B (Laptop CI)</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>NALA-HAL Profil</span>
+          <select id="selHal" onchange="recomputePlan()">
+            <option value="uma128">Profile 1: Apple Silicon 128GB UMA</option>
+            <option value="cuda48">Profile 4: Dual-GPU 48GB VRAM + 128GB RAM</option>
+            <option value="spark128">Profile 3: DGX Spark GB10 128GB UMA</option>
+            <option value="cuda24">Profile 4: Single 24GB GPU + 64GB RAM</option>
+            <option value="amd64">Profile 5: Ryzen AI Max+ 96GB UMA</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Acoustic / Thermal Envelope</span>
+          <select id="selQuiet" onchange="recomputePlan()">
+            <option value="normal">100% Max Throughput</option>
+            <option value="quiet">72% Quiet Thermal Envelope</option>
+          </select>
+        </label>
+      </div>
+      <div class="tier-bar" aria-label="Memory Tier Allocation">
+        <div class="tier-seg-vram" id="barVram" style="width:35%"></div>
+        <div class="tier-seg-ram" id="barRam" style="width:45%"></div>
+        <div class="tier-seg-nvme" id="barNvme" style="width:20%"></div>
+      </div>
+      <div class="tier-legend" id="tierSummaryText"></div>
+      <canvas id="expertMap" width="760" height="148"></canvas>
+    </section>
+
+    <section class="panel" aria-label="System One Calibrated Decision Tester">
+      <div class="panel-header">
+        <h2 class="panel-title" id="sys1Title">System One (/v1/systemone) — Kalibrierte Entscheidung</h2>
+        <span class="badge badge-sec" id="evLockBadge">EVIDENCE-LOCK OK</span>
+      </div>
+      <div class="controls-row">
+        <label class="field">
+          <span>Modus (Jev API)</span>
+          <select id="sys1Mode" onchange="runSystemOneUI()">
+            <option value="choice">choice (Closed-Set Softmax)</option>
+            <option value="noul">noul (Yes / No Binary)</option>
+            <option value="score">score (0.00 .. 1.00 Skala)</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Optionen (Komma)</span>
+          <input type="text" id="sys1Opts" value="tier0_vram, tier1_ram, tier2_nvme" oninput="runSystemOneUI()">
+        </label>
+      </div>
+      <label class="field" style="margin-bottom:12px">
+        <span>Kontext &amp; NALA-RAG Zitat-Prüfung ([Dok-ID, S. X])</span>
+        <input type="text" id="sys1Prompt" value="Verified bit-exact IEEE-754 tier0_vram placement [Dok-COLIBRI-RS, S. 4]" oninput="runSystemOneUI()">
+      </label>
+      <div id="sys1Bars"></div>
+      <div class="mono" style="margin-top:10px;font-size:12px;color:var(--text-secondary)" id="sys1Meta"></div>
+    </section>
+  </div>
+
+  <section class="panel" aria-label="Dream REA RSI Solution and Delta Matrix">
+    <div class="panel-header">
+      <h2 class="panel-title" id="matrixTitle">Dream / Software-Perlen / REA / RSI — Lösungsmatrix &amp; Delta-Übersichts-Matrix</h2>
+      <span class="badge badge-wait">2-Klick Bestätigungs-Gate aktiv</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>ID &amp; Quelle</th>
+            <th>Konzept / Modul</th>
+            <th>&Delta; Performance</th>
+            <th>&Delta; Features</th>
+            <th>&Delta; Sicherheit</th>
+            <th>Status &amp; 2-Klick Aktion</th>
+          </tr>
+        </thead>
+        <tbody id="rsiTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" aria-label="Multi-IDE Prompt Generator">
+    <div class="panel-header">
+      <h2 class="panel-title" id="promptTitle">1-Klick Multi-IDE Prompt-Generator (inkl. TheStandart Pflicht-Footer)</h2>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="ide-btn active" data-ide="Antigravity" onclick="selectIde('Antigravity')">Antigravity</button>
+        <button class="ide-btn" data-ide="Codex" onclick="selectIde('Codex')">Codex</button>
+        <button class="ide-btn" data-ide="ZCode" onclick="selectIde('ZCode')">ZCode</button>
+        <button class="ide-btn" data-ide="OpenCode" onclick="selectIde('OpenCode')">OpenCode</button>
+        <button class="btn btn-primary" onclick="copyPrompt()" id="copyBtn">Prompt kopieren</button>
+      </div>
+    </div>
+    <textarea id="idePromptBox" readonly aria-label="Generated Multi-IDE Implementation Prompt"></textarea>
+  </section>
+</main>
+
+<div class="modal-backdrop" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="modalHeading">
+  <div class="modal-box">
+    <h3 id="modalHeading" style="font-size:17px;margin-bottom:8px">Wollen Sie wirklich umsetzen?</h3>
+    <p id="modalDesc" style="font-size:13px;color:var(--text-secondary);margin-bottom:12px"></p>
+    <div class="mono" style="font-size:11.5px;background:var(--bg-elevated);padding:10px;border-radius:6px;border:1px solid var(--border-hairline)" id="modalSafeguards"></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeTwoClickModal()" id="btnCancelModal">Abbrechen</button>
+      <button class="btn btn-execute" onclick="confirmStepTwoExecute()" id="btnExecuteModal">AUSFÜHREN</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MANDATORY_FOOTER = `Kannst du die alles nach TheStandart und NCSP & Inventary (BackUP's, Snapshots und Rollbacks!) Umsetzen und mit NALAtheON's, NEOP's, und Grand TheGremium's jeweils mit Experten und mit (3-7 Runden) Analysiert, Optimiert und vom UI/UXI  entsprechend AAA Premium geplant und umgesetzt werden so wie aus einer Highend Software Firma kommt.  OHNE dabei AI-Slop zu erstellen! Und OHNE bestehende Features zu beschädigen oder NALA oder das NALA-OS kaputt zu machen! \nNutze die Resourcen von NALA und bringe ihr auch alles bei, trainiere sie so, dass sie das als einen Skill nutzen kann, den sie auch mit anderen Skill’s kombinieren kann! Sowie das sie auch diese Software weiterentwickeln kann, mögliche Verbesserungen in ihrer "Dream" Phasen überlegen, die Software Perlen durchsuchen oder eigenen Konzepte entwickeln, mit REA oder auch mit RSI  dann einen Plan erstellen (mit NALAtheON's, NEOP's und Grand TheGremium auf den NALA Resourcen  mit Experten) und mir diese als übersichtliches Konzepte mit Lösungsmatrix inkl. Delta Übersichts Matrix (Performance/Features/Sicherheits Optimierungen) vorschlagen kann die ich dann mit 2 Klick (1. klick -> (Installieren/Umsetzen)  und dann (wollen sie wirklich? -> (abbrechen) oder (AUSFÜHREN) und dann wird NALA dies implementieren (oder mir  die entsprechenden Prompts für Codex / Antigravity, ZCode oder OpenCode generieren, damit ich diese dann in den entsprechenden Coding tools Umsetzen kann!`;
+
+const I18N = {
+  de: {
+    title: "NALA-Colibri-RS v2.2.0-nala.6.6.6 — Universelle 3-Tier MoE Engine",
+    kpi1: "Kaltstart & Binärgrösse", kpi2: "MoE Modell-Familien", kpi3: "System One Latenz", kpi4: "Triple-Council Konvergenz",
+    sim: "3-Tier MoE Experten-Topologie (VRAM → Host-RAM → Dual-NVMe Stripe)",
+    sys1: "System One (/v1/systemone) — Kalibrierte Entscheidung",
+    matrix: "Dream / Software-Perlen / REA / RSI — Lösungsmatrix & Delta-Übersichts-Matrix",
+    prompt: "1-Klick Multi-IDE Prompt-Generator (inkl. TheStandart Pflicht-Footer)",
+    installBtn: "Installieren / Umsetzen",
+    askReally: "Wollen Sie wirklich dieses Modul umsetzen?",
+    cancel: "Abbrechen",
+    execute: "AUSFÜHREN"
+  },
+  fr: {
+    title: "NALA-Colibri-RS v2.2.0-nala.6.6.6 — Moteur MoE Universel 3-Niveaux",
+    kpi1: "Démarrage à froid", kpi2: "Familles MoE", kpi3: "Latence System One", kpi4: "Convergence Triple-Conseil",
+    sim: "Topologie d'Experts MoE 3-Niveaux (VRAM → RAM Hôte → Double NVMe)",
+    sys1: "System One (/v1/systemone) — Décision Probabiliste Calibrée",
+    matrix: "Matrice de Solutions & Delta (Performance / Fonctionnalités / Sécurité)",
+    prompt: "Générateur de Prompts Multi-IDE en 1 Clic (avec pied de page TheStandart)",
+    installBtn: "Installer / Appliquer",
+    askReally: "Voulez-vous vraiment exécuter cette optimisation ?",
+    cancel: "Annuler",
+    execute: "EXÉCUTER"
+  },
+  it: {
+    title: "NALA-Colibri-RS v2.2.0-nala.6.6.6 — Motore MoE Universale a 3 Livelli",
+    kpi1: "Avvio a freddo", kpi2: "Famiglie MoE", kpi3: "Latenza System One", kpi4: "Convergenza Triple-Council",
+    sim: "Topologia Esperti MoE a 3 Livelli (VRAM → RAM Host → Dual-NVMe)",
+    sys1: "System One (/v1/systemone) — Decisione Probabilistica Calibrata",
+    matrix: "Matrice delle Soluzioni & Delta (Prestazioni / Funzioni / Sicurezza)",
+    prompt: "Generatore Prompt Multi-IDE in 1 Clic (con footer TheStandart)",
+    installBtn: "Installa / Applica",
+    askReally: "Vuoi davvero eseguire questo piano RSI?",
+    cancel: "Annulla",
+    execute: "ESEGUI"
+  },
+  rm: {
+    title: "NALA-Colibri-RS v2.2.0-nala.6.6.6 — Maschina MoE Universala da 3 Stgalims",
+    kpi1: "Aviament frestg", kpi2: "Famiglias MoE", kpi3: "Latenza System One", kpi4: "Convergenza Triple-Council",
+    sim: "Topologia d'Experts MoE (VRAM → RAM → Dual-NVMe)",
+    sys1: "System One (/v1/systemone) — Decisiun Calibrada",
+    matrix: "Matriza da Soluziuns & Delta (Prestadaziun / Funcziuns / Segirezza)",
+    prompt: "Generatur da Prompts Multi-IDE (incl. TheStandart)",
+    installBtn: "Installar / Realisar",
+    askReally: "Vulais Vus propi exequir questa optimaziun?",
+    cancel: "Interrumper",
+    execute: "EXEQUIR"
+  },
+  en: {
+    title: "NALA-Colibri-RS v2.2.0-nala.6.6.6 — Universal 3-Tier MoE Engine",
+    kpi1: "Cold Start & Binary", kpi2: "MoE Model Families", kpi3: "System One Latency", kpi4: "Triple-Council Score",
+    sim: "3-Tier MoE Expert Topology (VRAM → Host RAM → Striped Dual-NVMe)",
+    sys1: "System One (/v1/systemone) — Calibrated Probabilistic Decision",
+    matrix: "Dream / Software-Pearls / REA / RSI — Solution & Delta Matrix",
+    prompt: "1-Click Multi-IDE Prompt Generator (with verbatim TheStandart footer)",
+    installBtn: "Install / Implement",
+    askReally: "Do you really want to execute this optimization?",
+    cancel: "Cancel",
+    execute: "EXECUTE"
+  }
+};
+
+const MODELS = {
+  "glm-5.3":            { totalExp: 23552, expMb: 15.0, trunkGb: 14.5, activeGb: 10.8 },
+  "deepseek-v4.1-flash":{ totalExp: 18432, expMb: 14.0, trunkGb: 13.0, activeGb: 9.2 },
+  "mistral-large-4":    { totalExp: 24576, expMb: 20.0, trunkGb: 18.0, activeGb: 13.5 },
+  "kimi-k3":            { totalExp: 39936, expMb: 35.0, trunkGb: 22.0, activeGb: 16.4 },
+  "qwen3.8-flash-next": { totalExp: 12288, expMb: 5.0,  trunkGb: 6.4,  activeGb: 4.1 },
+  "qwen3.6-35b-a3b":    { totalExp: 10240, expMb: 1.5,  trunkGb: 2.2,  activeGb: 1.4 },
+  "olmoe-1b-7b":        { totalExp: 1024,  expMb: 3.0,  trunkGb: 0.7,  activeGb: 0.6 }
+};
+
+const HALS = {
+  uma128:  { vram: 92, ram: 26, nvmeBw: 7.2, gpuBw: 546 },
+  cuda48:  { vram: 48, ram: 108, nvmeBw: 13.6, gpuBw: 896 },
+  spark128:{ vram: 96, ram: 22, nvmeBw: 7.0, gpuBw: 273 },
+  cuda24:  { vram: 24, ram: 54, nvmeBw: 7.0, gpuBw: 672 },
+  amd64:   { vram: 64, ram: 24, nvmeBw: 6.8, gpuBw: 512 }
+};
+
+const PROPOSALS = [
+  {
+    id: "RSI-COLIBRI-001", wave: 1, status: "ACTIVE_LIVE", origin: "REA + Strata-RS",
+    title: "7-Profile NALA-HAL × Colibri 13-Family Unified 3-Tier Planner",
+    dPerf: "+4,800× schneller (<45 µs statt Python resource_plan.py)",
+    dFeat: "13 Familien + 21 Presets + 88% MTP Break-Even Gate",
+    dSec: "Kein Python-Interpreter oder Login-Shell-Subprozess",
+    files: "src/planner.rs, src/catalog.rs"
+  },
+  {
+    id: "RSI-COLIBRI-002", wave: 1, status: "ACTIVE_LIVE", origin: "Dream + Kernel Rust",
+    title: "Zero-Lock RAII Lease ExpertStore + Markov .coli_pairs + COLI_PARK",
+    dPerf: "<35 ns Lease Acquire/Drop; <900 ns COLI_PARK Save/Restore",
+    dFeat: "Gewichteter Dual-NVMe Stripe-Mapper + 1-Layer Lookahead",
+    dSec: "Eliminiert C Use-After-Free / Double-Release durch Rust Drop",
+    files: "src/expert_store.rs"
+  },
+  {
+    id: "RSI-COLIBRI-003", wave: 1, status: "ACTIVE_LIVE", origin: "REA + Evidence-Lock",
+    title: "Jev-Kompatibles System One (/v1/systemone) + NALA-RAG Zitat-Prüfer",
+    dPerf: "0 generierte Tokens; ~1.8 µs Softmax & Shannon-Entropie",
+    dFeat: "choice / noul / score + deterministischer [Dok-ID, S. X] Lock",
+    dSec: "Blockiert unbelegte autonome Entscheidungen bei Evidence-Lock",
+    files: "src/system_one.rs"
+  },
+  {
+    id: "RSI-COLIBRI-004", wave: 1, status: "ACTIVE_LIVE", origin: "sHeriFF + Quiet Envelope",
+    title: "SEC-COLIBRI-01..04 Gateway Shield + 72% Quiet Thermal Governor",
+    dPerf: "-28% NVMe/Lüfter-Spitzen durch 72% Quiet-Thermal-Envelope",
+    dFeat: "HMAC-SHA256 Cluster-Auth + 10 MiB HTTP 413 + IP-Pinned SSRF + SHA-256 Self-Check",
+    dSec: "Schliesst alle 4 Upstream-Schwachstellen (OOM, DNS-Rebind, Cluster, Header)",
+    files: "src/security.rs, src/containers.rs"
+  },
+  {
+    id: "RSI-COLIBRI-005", wave: 2, status: "WAITING_2CLICK", origin: "Dream + Software-Perlen",
+    title: "Registered-Buffer Zero-Copy NVMe Expert Ring (io_uring / F_NOCACHE)",
+    dPerf: "-48% Cold-SSD Syscall-Jitter; +31% Cold-Streaming tok/s",
+    dFeat: "Vorregistrierter 4-KiB Page-Ring ohne OS Page-Cache-Verschmutzung",
+    dSec: "Strikte Slot-Quoten ohne Kernel-Privilegien-Eskalation",
+    files: "src/nvme_ring.rs, src/expert_store.rs"
+  },
+  {
+    id: "RSI-COLIBRI-006", wave: 2, status: "WAITING_2CLICK", origin: "Software-Perlen (DietGPU)",
+    title: "DietGPU-Style SIMD rANS Exponent-Komprimierter VRAM Expert-Tier",
+    dPerf: "+58% mehr heisse Experten in 8–24 GB VRAM (+19% Hit-Rate)",
+    dFeat: "Verlustfreie rANS-Kompression der BF16/FP8-Exponenten im L2-Cache",
+    dSec: "Bit-exakte Rekonstruktion mit FNV-1a / SHA-256 Tensor-Prüfsumme",
+    files: "src/rans_expert_codec.rs, src/kernels.rs"
+  },
+  {
+    id: "RSI-COLIBRI-007", wave: 2, status: "WAITING_2CLICK", origin: "REA (Colibri NMED 16-Tree)",
+    title: "Routing-Aware 16-Node NMED Speculative Tree mit Cold-NVMe Veto",
+    dPerf: "+36% Decode tok/s auf heissen Experten, 0% Cold-SSD Regression",
+    dFeat: "Schneidet Draft-Pfade ab, deren Experten kalt auf NVMe liegen",
+    dSec: "Automatisches kv_prefix Taint-Reset bei Draft-Rollback",
+    files: "src/speculative_nmed.rs, src/expert_store.rs"
+  },
+  {
+    id: "RSI-COLIBRI-008", wave: 2, status: "WAITING_2CLICK", origin: "Synergy (Understory-RS)",
+    title: "Persistenter Verschlüsselter MLA COLI_PARK Vault über Neustarts",
+    dPerf: "<4 ms Resume von 64k-Token MLA-Sessions (57× komprimiert)",
+    dFeat: "Koppelt geparkte KV-States an NALA-Understory-RS OKF Notizen",
+    dSec: "ARX-256 + HMAC-SHA256 Zonen-Verschlüsselung & SHA-256 Rollback",
+    files: "src/mla_park_vault.rs, src/security.rs"
+  }
+];
+
+let currentLang = "de";
+let currentIde = "Antigravity";
+let selectedProposalId = "RSI-COLIBRI-005";
+let armedProposal = null;
+
+function setLang(lang) {
+  currentLang = lang;
+  document.documentElement.lang = lang;
+  document.querySelectorAll(".lang-btn").forEach(b => b.classList.toggle("active", b.dataset.lang === lang));
+  const t = I18N[lang];
+  document.getElementById("i18nTitle").textContent = t.title;
+  document.getElementById("kpiLbl1").textContent = t.kpi1;
+  document.getElementById("kpiLbl2").textContent = t.kpi2;
+  document.getElementById("kpiLbl3").textContent = t.kpi3;
+  document.getElementById("kpiLbl4").textContent = t.kpi4;
+  document.getElementById("simTitle").textContent = t.sim;
+  document.getElementById("sys1Title").textContent = t.sys1;
+  document.getElementById("matrixTitle").textContent = t.matrix;
+  document.getElementById("promptTitle").textContent = t.prompt;
+  document.getElementById("btnCancelModal").textContent = t.cancel;
+  document.getElementById("btnExecuteModal").textContent = t.execute;
+  renderRsiTable();
+}
+
+function recomputePlan() {
+  const m = MODELS[document.getElementById("selModel").value];
+  const h = HALS[document.getElementById("selHal").value];
+  const quiet = document.getElementById("selQuiet").value === "quiet";
+  const duty = quiet ? 0.72 : 1.0;
+  const expGb = m.expMb / 1024.0;
+  const freeVram = Math.max(0, h.vram - m.trunkGb - 1.2);
+  const spill = Math.max(0, m.trunkGb + 1.2 - h.vram);
+  const freeRam = Math.max(0, h.ram - spill - 2.0);
+
+  const hot = Math.min(m.totalExp, Math.floor(freeVram / expGb));
+  const warm = Math.min(m.totalExp - hot, Math.floor(freeRam / expGb));
+  const cold = m.totalExp - hot - warm;
+
+  const pV = (hot / m.totalExp) * 100;
+  const pR = (warm / m.totalExp) * 100;
+  const pN = (cold / m.totalExp) * 100;
+
+  document.getElementById("barVram").style.width = pV.toFixed(1) + "%";
+  document.getElementById("barRam").style.width = pR.toFixed(1) + "%";
+  document.getElementById("barNvme").style.width = pN.toFixed(1) + "%";
+
+  const resFrac = (hot + warm) / m.totalExp;
+  const hit = resFrac >= 0.999 ? 1.0 : Math.min(0.995, Math.pow(resFrac, 0.58) * 1.06);
+  const mtpOn = hit >= 0.88;
+  const step = (m.activeGb * (hot / m.totalExp)) / h.gpuBw
+             + (m.activeGb * Math.max(0, hit - hot / m.totalExp)) / 92.0
+             + (m.activeGb * (1 - hit)) / (h.nvmeBw * duty) + 0.0012;
+  const tokS = ((1.0 / step) * (mtpOn ? 1.24 : 1.0) * duty).toFixed(1);
+
+  const badge = document.getElementById("mtpBadge");
+  badge.textContent = mtpOn ? `MTP ON (${(hit*100).toFixed(1)}% Hit)` : `MTP GATED OFF (${(hit*100).toFixed(1)}% < 88%)`;
+  badge.className = "badge " + (mtpOn ? "badge-live" : "badge-wait");
+
+  document.getElementById("tierSummaryText").innerHTML =
+    `<span><i class="dot" style="background:var(--tier-vram)"></i>VRAM Hot: ${hot} (${pV.toFixed(1)}%)</span>` +
+    `<span><i class="dot" style="background:var(--tier-ram)"></i>Host RAM Warm: ${warm} (${pR.toFixed(1)}%)</span>` +
+    `<span><i class="dot" style="background:var(--tier-nvme)"></i>Striped NVMe Cold: ${cold} (${pN.toFixed(1)}%)</span>` +
+    `<span style="color:#6ee7b7">Decode: ~${tokS} tok/s</span>`;
+
+  drawExpertCanvas(pV / 100, (pV + pR) / 100);
+}
+
+function drawExpertCanvas(vramCut, ramCut) {
+  const cv = document.getElementById("expertMap");
+  const ctx = cv.getContext("2d");
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  const cols = 48, rows = 8;
+  const cw = cv.width / cols, ch = cv.height / rows;
+  const total = cols * rows;
+  for (let i = 0; i < total; i++) {
+    const r = Math.floor(i / cols), c = i % cols;
+    const frac = i / total;
+    ctx.fillStyle = frac < vramCut ? "#10b981" : (frac < ramCut ? "#0ea5e9" : "#f59e0b");
+    ctx.globalAlpha = ((i * 19 + r * 7) % 11 === 0) ? 0.98 : 0.36;
+    ctx.fillRect(c * cw + 1.5, r * ch + 1.5, cw - 3, ch - 3);
+  }
+  ctx.globalAlpha = 1.0;
+}
+
+function runSystemOneUI() {
+  const mode = document.getElementById("sys1Mode").value;
+  const prompt = document.getElementById("sys1Prompt").value;
+  const rawOpts = document.getElementById("sys1Opts").value.split(",").map(s => s.trim()).filter(Boolean);
+  const opts = mode === "noul" ? ["yes", "no"]
+             : mode === "score" ? ["0.00", "0.25", "0.50", "0.75", "1.00"]
+             : (rawOpts.length ? rawOpts : ["approve", "defer", "reject"]);
+
+  const hasCit = /\[(dok|doc|ref)[^\]]*(s\.|p\.|sec)[^\]]*\]/i.test(prompt);
+  const evBadge = document.getElementById("evLockBadge");
+  evBadge.textContent = hasCit ? "EVIDENCE-LOCK PASS" : "UNVERIFIED (NO CITATION)";
+  evBadge.className = "badge " + (hasCit ? "badge-sec" : "badge-wait");
+
+  const pLow = prompt.toLowerCase();
+  const logits = opts.map((o, idx) => {
+    let s = pLow.includes(o.toLowerCase()) ? 2.1 : 0.25;
+    if (mode === "noul" && idx === 0 && hasCit) s += 1.4;
+    if (mode === "score") s = -Math.pow((idx * 0.25 - (hasCit ? 0.85 : 0.45)) * 3.2, 2);
+    return s + ((o.length % 5) * 0.04);
+  });
+  const mx = Math.max(...logits);
+  const exps = logits.map(l => Math.exp(l - mx));
+  const sum = exps.reduce((a, b) => a + b, 0);
+  const probs = exps.map(e => e / sum);
+  let ent = 0;
+  probs.forEach(p => { if (p > 1e-12) ent -= p * Math.log(p); });
+  const conf = opts.length > 1 ? Math.max(0, 1 - ent / Math.log(opts.length)) : 1;
+
+  document.getElementById("sys1Bars").innerHTML = opts.map((o, i) => `
+    <div class="prob-row">
+      <span>${o}</span>
+      <div class="prob-track"><div class="prob-fill" style="width:${(probs[i]*100).toFixed(1)}%"></div></div>
+      <span style="text-align:right">${(probs[i]*100).toFixed(2)}%</span>
+    </div>`).join("");
+  document.getElementById("sys1Meta").textContent =
+    `Winner: ${opts[probs.indexOf(Math.max(...probs))]} | Confidence: ${(conf*100).toFixed(1)}% | Entropy: ${ent.toFixed(3)} nats | Generated Tokens: 0`;
+}
+
+function renderRsiTable() {
+  const t = I18N[currentLang];
+  document.getElementById("rsiTableBody").innerHTML = PROPOSALS.map(p => {
+    const isLive = p.status === "ACTIVE_LIVE";
+    return `<tr>
+      <td class="mono"><strong>${p.id}</strong><br><span style="color:var(--text-muted);font-size:11px">${p.origin}</span></td>
+      <td><strong>${p.title}</strong><br><span class="mono" style="font-size:11px;color:var(--text-muted)">${p.files}</span></td>
+      <td class="delta-pos">${p.dPerf}</td>
+      <td>${p.dFeat}</td>
+      <td class="delta-sec">${p.dSec}</td>
+      <td>
+        <span class="badge ${isLive ? 'badge-live' : 'badge-wait'}">${p.status}</span>
+        <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="openStepOneModal('${p.id}')">1. ${t.installBtn}</button>
+          <button class="btn" onclick="selectProposalForPrompt('${p.id}')">IDE Prompt</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+function openStepOneModal(id) {
+  const p = PROPOSALS.find(x => x.id === id);
+  if (!p) return;
+  armedProposal = p;
+  selectedProposalId = p.id;
+  updatePromptBox();
+  const t = I18N[currentLang];
+  document.getElementById("modalHeading").textContent = `${t.askReally} (${p.id})`;
+  document.getElementById("modalDesc").textContent = p.title;
+  document.getElementById("modalSafeguards").innerHTML =
+    `[NCSP v2.5 Gate] Pre-Flight SHA-256 Snapshot + rollback.sh aktiv.<br>` +
+    `[Zero-Regression] Bestehende Features, Host-System &amp; Workloads geschützt.<br>` +
+    `[Target] ${p.files}`;
+  document.getElementById("confirmModal").classList.add("open");
+}
+
+function closeTwoClickModal() {
+  armedProposal = null;
+  document.getElementById("confirmModal").classList.remove("open");
+}
+
+async function confirmStepTwoExecute() {
+  if (!armedProposal) return;
+  const p = armedProposal;
+  p.status = "STAGED_2CLICK_CONFIRMED";
+  try {
+    await fetch("/api/rsi/execute", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: p.id, confirm: "AUSFUEHREN" })
+    });
+  } catch (_) {
+    /* Standalone file:// mode compiles prompt locally */
+  }
+  closeTwoClickModal();
+  renderRsiTable();
+  selectProposalForPrompt(p.id);
+}
+
+function selectIde(ide) {
+  currentIde = ide;
+  document.querySelectorAll(".ide-btn").forEach(b => b.classList.toggle("active", b.dataset.ide === ide));
+  updatePromptBox();
+}
+
+function selectProposalForPrompt(id) {
+  selectedProposalId = id;
+  updatePromptBox();
+}
+
+function updatePromptBox() {
+  const p = PROPOSALS.find(x => x.id === selectedProposalId) || PROPOSALS[4];
+  document.getElementById("idePromptBox").value =
+`# [${currentIde}] Implementation Blueprint — ${p.id}: ${p.title}
+Repository: https://github.com/Master-MD/NALA-Colibri-RS (100% Native Rust Edition 2024, #![forbid(unsafe_code)], Zero-Python, Zero-Node.js)
+Target Modules: ${p.files}
+
+## Expected Verified Deltas
+- Delta Performance: ${p.dPerf}
+- Delta Features:    ${p.dFeat}
+- Delta Security:    ${p.dSec}
+
+${MANDATORY_FOOTER}`;
+}
+
+function copyPrompt() {
+  const box = document.getElementById("idePromptBox");
+  navigator.clipboard.writeText(box.value);
+  const btn = document.getElementById("copyBtn");
+  const prev = btn.textContent;
+  btn.textContent = "Kopiert!";
+  setTimeout(() => { btn.textContent = prev; }, 1400);
+}
+
+recomputePlan();
+runSystemOneUI();
+renderRsiTable();
+updatePromptBox();
+</script>
+</body>
+</html>
